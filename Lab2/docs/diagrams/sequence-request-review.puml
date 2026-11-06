@@ -59,7 +59,7 @@ else ответственное лицо Б
     end note
     DB --> EQ : изменено 0 строк
     EQ --> REQ : единица не в статусе «в наличии»
-    REQ -> DB : № 102: status = 'rejected', причина «единица не в наличии», decided_at
+    REQ -> DB : № 102: status = 'rejected', decided_at
     REQ -> LOG : заявка отклонена системой
   end
   REQ --> RB : «Заявка отклонена: единица уже забронирована»

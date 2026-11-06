@@ -34,7 +34,7 @@
         <bpmn:flowNodeRef>x_rejected</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
-    <bpmn:startEvent id="t_start" name="Ежедневно в начале рабочих часов">
+    <bpmn:startEvent id="t_start" name="Запуск планировщика в рабочие часы">
       <bpmn:outgoing>Flow_t_start_t_find</bpmn:outgoing>
       <bpmn:timerEventDefinition id="t_start_def" />
     </bpmn:startEvent>
@@ -144,7 +144,7 @@
       <bpmndi:BPMNShape id="L_mgr_di" bpmnElement="L_mgr" isHorizontal="true"><dc:Bounds x="30" y="530" width="1490" height="150" /></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="t_start_di" bpmnElement="t_start"><dc:Bounds x="142" y="152" width="36" height="36" /></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="t_find_di" bpmnElement="t_find"><dc:Bounds x="260" y="130" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="t_case_di" bpmnElement="t_case" isMarkerVisible="true"><dc:Bounds x="455" y="145" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_case_di" bpmnElement="t_case" isMarkerVisible="true"><dc:Bounds x="455" y="145" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="385" y="190" width="80" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="t_remind_di" bpmnElement="t_remind"><dc:Bounds x="580" y="130" width="120" height="80" /></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="t_remind_end_di" bpmnElement="t_remind_end"><dc:Bounds x="782" y="152" width="36" height="36" /></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="t_manager_di" bpmnElement="t_manager"><dc:Bounds x="900" y="230" width="120" height="80" /></bpmndi:BPMNShape>

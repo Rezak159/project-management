@@ -50,6 +50,8 @@ SCH --> DL
 SCH --> NTF
 SCH --> LOG
 NTF --> SMTP : SMTP
+NTF --> SET : параметры почты, график
+NTF --> LOG : ошибки отправки
 WEB --> DB : SQL
 SCH --> DB : SQL
 @enduml

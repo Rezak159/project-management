@@ -27,6 +27,7 @@
         <bpmn:flowNodeRef>w_inspect</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>w_state</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>w_damage</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>w_desc</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>w_repair</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>w_result</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>w_fixed</bpmn:flowNodeRef>
@@ -81,10 +82,16 @@
     </bpmn:endEvent>
     <bpmn:userTask id="w_damage" name="Описать повреждение">
       <bpmn:incoming>Flow_w_state_w_damage</bpmn:incoming>
-      <bpmn:outgoing>Flow_w_damage_s_repair</bpmn:outgoing>
+      <bpmn:incoming>Flow_w_desc_w_damage</bpmn:incoming>
+      <bpmn:outgoing>Flow_w_damage_w_desc</bpmn:outgoing>
     </bpmn:userTask>
+    <bpmn:exclusiveGateway id="w_desc" name="Описание указано?">
+      <bpmn:incoming>Flow_w_damage_w_desc</bpmn:incoming>
+      <bpmn:outgoing>Flow_w_desc_w_damage</bpmn:outgoing>
+      <bpmn:outgoing>Flow_w_desc_s_repair</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
     <bpmn:serviceTask id="s_repair" name="Закрыть выдачу, статус «починка»">
-      <bpmn:incoming>Flow_w_damage_s_repair</bpmn:incoming>
+      <bpmn:incoming>Flow_w_desc_s_repair</bpmn:incoming>
       <bpmn:outgoing>Flow_s_repair_w_repair</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:manualTask id="w_repair" name="Передать единицу в ремонт (вне системы)">
@@ -119,59 +126,64 @@
     <bpmn:sequenceFlow id="Flow_w_state_s_ok" name="без повреждений" sourceRef="w_state" targetRef="s_ok" />
     <bpmn:sequenceFlow id="Flow_s_ok_s_ok_end" sourceRef="s_ok" targetRef="s_ok_end" />
     <bpmn:sequenceFlow id="Flow_w_state_w_damage" name="повреждена" sourceRef="w_state" targetRef="w_damage" />
-    <bpmn:sequenceFlow id="Flow_w_damage_s_repair" sourceRef="w_damage" targetRef="s_repair" />
+    <bpmn:sequenceFlow id="Flow_w_damage_w_desc" sourceRef="w_damage" targetRef="w_desc" />
     <bpmn:sequenceFlow id="Flow_s_repair_w_repair" sourceRef="s_repair" targetRef="w_repair" />
     <bpmn:sequenceFlow id="Flow_w_repair_w_result" sourceRef="w_repair" targetRef="w_result" />
     <bpmn:sequenceFlow id="Flow_w_result_w_fixed" name="да" sourceRef="w_result" targetRef="w_fixed" />
     <bpmn:sequenceFlow id="Flow_w_fixed_w_fixed_end" sourceRef="w_fixed" targetRef="w_fixed_end" />
     <bpmn:sequenceFlow id="Flow_w_result_w_writeoff" name="нет" sourceRef="w_result" targetRef="w_writeoff" />
     <bpmn:sequenceFlow id="Flow_w_writeoff_w_writeoff_end" sourceRef="w_writeoff" targetRef="w_writeoff_end" />
+    <bpmn:sequenceFlow id="Flow_w_desc_w_damage" name="нет" sourceRef="w_desc" targetRef="w_damage" />
+    <bpmn:sequenceFlow id="Flow_w_desc_s_repair" name="да" sourceRef="w_desc" targetRef="s_repair" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="Diagram_return">
     <bpmndi:BPMNPlane id="Plane_return" bpmnElement="Collab_return">
-      <bpmndi:BPMNShape id="P_emp_di" bpmnElement="P_emp" isHorizontal="true"><dc:Bounds x="0" y="0" width="2160" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P_emp_di" bpmnElement="P_emp" isHorizontal="true"><dc:Bounds x="0" y="0" width="2320" height="150" /></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="e_start_di" bpmnElement="e_start"><dc:Bounds x="142" y="57" width="36" height="36" /></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="e_bring_di" bpmnElement="e_bring"><dc:Bounds x="260" y="35" width="120" height="80" /></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="e_end_di" bpmnElement="e_end"><dc:Bounds x="462" y="57" width="36" height="36" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="P_org_di" bpmnElement="P_org" isHorizontal="true"><dc:Bounds x="0" y="200" width="2160" height="500" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="L_wh_di" bpmnElement="L_wh" isHorizontal="true"><dc:Bounds x="30" y="200" width="2130" height="280" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="L_sys_di" bpmnElement="L_sys" isHorizontal="true"><dc:Bounds x="30" y="480" width="2130" height="220" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_start_di" bpmnElement="w_start"><dc:Bounds x="302" y="322" width="36" height="36" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_scan_di" bpmnElement="w_scan"><dc:Bounds x="420" y="300" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="s_find_di" bpmnElement="s_find"><dc:Bounds x="580" y="550" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="s_found_di" bpmnElement="s_found" isMarkerVisible="true"><dc:Bounds x="775" y="565" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="671" y="531" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="s_not_found_di" bpmnElement="s_not_found"><dc:Bounds x="942" y="597" width="36" height="36" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_inspect_di" bpmnElement="w_inspect"><dc:Bounds x="900" y="300" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_state_di" bpmnElement="w_state" isMarkerVisible="true"><dc:Bounds x="1095" y="315" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="991" y="281" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="s_ok_di" bpmnElement="s_ok"><dc:Bounds x="1220" y="510" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="s_ok_end_di" bpmnElement="s_ok_end"><dc:Bounds x="1422" y="512" width="36" height="36" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_damage_di" bpmnElement="w_damage"><dc:Bounds x="1220" y="210" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="s_repair_di" bpmnElement="s_repair"><dc:Bounds x="1380" y="600" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_repair_di" bpmnElement="w_repair"><dc:Bounds x="1540" y="300" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_result_di" bpmnElement="w_result" isMarkerVisible="true"><dc:Bounds x="1735" y="315" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="1631" y="281" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_fixed_di" bpmnElement="w_fixed"><dc:Bounds x="1860" y="210" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_fixed_end_di" bpmnElement="w_fixed_end"><dc:Bounds x="2062" y="232" width="36" height="36" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_writeoff_di" bpmnElement="w_writeoff"><dc:Bounds x="1860" y="390" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="w_writeoff_end_di" bpmnElement="w_writeoff_end"><dc:Bounds x="2062" y="412" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P_org_di" bpmnElement="P_org" isHorizontal="true"><dc:Bounds x="0" y="200" width="2320" height="540" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L_wh_di" bpmnElement="L_wh" isHorizontal="true"><dc:Bounds x="30" y="200" width="2290" height="320" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L_sys_di" bpmnElement="L_sys" isHorizontal="true"><dc:Bounds x="30" y="520" width="2290" height="220" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_start_di" bpmnElement="w_start"><dc:Bounds x="302" y="342" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_scan_di" bpmnElement="w_scan"><dc:Bounds x="420" y="320" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_find_di" bpmnElement="s_find"><dc:Bounds x="580" y="590" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_found_di" bpmnElement="s_found" isMarkerVisible="true"><dc:Bounds x="775" y="605" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="671" y="571" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_not_found_di" bpmnElement="s_not_found"><dc:Bounds x="942" y="637" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_inspect_di" bpmnElement="w_inspect"><dc:Bounds x="900" y="320" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_state_di" bpmnElement="w_state" isMarkerVisible="true"><dc:Bounds x="1095" y="335" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="991" y="301" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_ok_di" bpmnElement="s_ok"><dc:Bounds x="1220" y="550" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_ok_end_di" bpmnElement="s_ok_end"><dc:Bounds x="1422" y="552" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_damage_di" bpmnElement="w_damage"><dc:Bounds x="1220" y="250" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_desc_di" bpmnElement="w_desc" isMarkerVisible="true"><dc:Bounds x="1415" y="265" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_repair_di" bpmnElement="s_repair"><dc:Bounds x="1540" y="640" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_repair_di" bpmnElement="w_repair"><dc:Bounds x="1700" y="320" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_result_di" bpmnElement="w_result" isMarkerVisible="true"><dc:Bounds x="1895" y="335" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="1791" y="301" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_fixed_di" bpmnElement="w_fixed"><dc:Bounds x="2020" y="230" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_fixed_end_di" bpmnElement="w_fixed_end"><dc:Bounds x="2222" y="252" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_writeoff_di" bpmnElement="w_writeoff"><dc:Bounds x="2020" y="410" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_writeoff_end_di" bpmnElement="w_writeoff_end"><dc:Bounds x="2222" y="432" width="36" height="36" /></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_e_start_e_bring_di" bpmnElement="Flow_e_start_e_bring"><di:waypoint x="178" y="75" /><di:waypoint x="260" y="75" /></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_e_bring_e_end_di" bpmnElement="Flow_e_bring_e_end"><di:waypoint x="380" y="75" /><di:waypoint x="462" y="75" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_start_w_scan_di" bpmnElement="Flow_w_start_w_scan"><di:waypoint x="338" y="340" /><di:waypoint x="420" y="340" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_scan_s_find_di" bpmnElement="Flow_w_scan_s_find"><di:waypoint x="540" y="340" /><di:waypoint x="560" y="340" /><di:waypoint x="560" y="590" /><di:waypoint x="580" y="590" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_s_find_s_found_di" bpmnElement="Flow_s_find_s_found"><di:waypoint x="700" y="590" /><di:waypoint x="775" y="590" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_s_found_s_not_found_di" bpmnElement="Flow_s_found_s_not_found"><di:waypoint x="800" y="615" /><di:waypoint x="800" y="615" /><di:waypoint x="942" y="615" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_s_found_w_inspect_di" bpmnElement="Flow_s_found_w_inspect"><di:waypoint x="800" y="565" /><di:waypoint x="800" y="340" /><di:waypoint x="900" y="340" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_inspect_w_state_di" bpmnElement="Flow_w_inspect_w_state"><di:waypoint x="1020" y="340" /><di:waypoint x="1095" y="340" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_state_s_ok_di" bpmnElement="Flow_w_state_s_ok"><di:waypoint x="1120" y="365" /><di:waypoint x="1120" y="550" /><di:waypoint x="1220" y="550" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_s_ok_s_ok_end_di" bpmnElement="Flow_s_ok_s_ok_end"><di:waypoint x="1340" y="550" /><di:waypoint x="1381" y="550" /><di:waypoint x="1381" y="530" /><di:waypoint x="1422" y="530" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_state_w_damage_di" bpmnElement="Flow_w_state_w_damage"><di:waypoint x="1120" y="315" /><di:waypoint x="1120" y="250" /><di:waypoint x="1220" y="250" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_damage_s_repair_di" bpmnElement="Flow_w_damage_s_repair"><di:waypoint x="1340" y="250" /><di:waypoint x="1360" y="250" /><di:waypoint x="1360" y="640" /><di:waypoint x="1380" y="640" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_s_repair_w_repair_di" bpmnElement="Flow_s_repair_w_repair"><di:waypoint x="1500" y="640" /><di:waypoint x="1520" y="640" /><di:waypoint x="1520" y="340" /><di:waypoint x="1540" y="340" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_repair_w_result_di" bpmnElement="Flow_w_repair_w_result"><di:waypoint x="1660" y="340" /><di:waypoint x="1735" y="340" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_result_w_fixed_di" bpmnElement="Flow_w_result_w_fixed"><di:waypoint x="1760" y="315" /><di:waypoint x="1760" y="250" /><di:waypoint x="1860" y="250" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_fixed_w_fixed_end_di" bpmnElement="Flow_w_fixed_w_fixed_end"><di:waypoint x="1980" y="250" /><di:waypoint x="2062" y="250" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_result_w_writeoff_di" bpmnElement="Flow_w_result_w_writeoff"><di:waypoint x="1760" y="365" /><di:waypoint x="1760" y="430" /><di:waypoint x="1860" y="430" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_w_writeoff_w_writeoff_end_di" bpmnElement="Flow_w_writeoff_w_writeoff_end"><di:waypoint x="1980" y="430" /><di:waypoint x="2062" y="430" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Msg_e_bring_w_start_di" bpmnElement="Msg_e_bring_w_start"><di:waypoint x="320" y="115" /><di:waypoint x="320" y="322" /><bpmndi:BPMNLabel><dc:Bounds x="330" y="162" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_start_w_scan_di" bpmnElement="Flow_w_start_w_scan"><di:waypoint x="338" y="360" /><di:waypoint x="420" y="360" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_scan_s_find_di" bpmnElement="Flow_w_scan_s_find"><di:waypoint x="540" y="360" /><di:waypoint x="560" y="360" /><di:waypoint x="560" y="630" /><di:waypoint x="580" y="630" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_find_s_found_di" bpmnElement="Flow_s_find_s_found"><di:waypoint x="700" y="630" /><di:waypoint x="775" y="630" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_found_s_not_found_di" bpmnElement="Flow_s_found_s_not_found"><di:waypoint x="800" y="655" /><di:waypoint x="800" y="655" /><di:waypoint x="942" y="655" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_found_w_inspect_di" bpmnElement="Flow_s_found_w_inspect"><di:waypoint x="800" y="605" /><di:waypoint x="800" y="360" /><di:waypoint x="900" y="360" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_inspect_w_state_di" bpmnElement="Flow_w_inspect_w_state"><di:waypoint x="1020" y="360" /><di:waypoint x="1095" y="360" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_state_s_ok_di" bpmnElement="Flow_w_state_s_ok"><di:waypoint x="1120" y="385" /><di:waypoint x="1120" y="590" /><di:waypoint x="1220" y="590" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_ok_s_ok_end_di" bpmnElement="Flow_s_ok_s_ok_end"><di:waypoint x="1340" y="590" /><di:waypoint x="1381" y="590" /><di:waypoint x="1381" y="570" /><di:waypoint x="1422" y="570" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_state_w_damage_di" bpmnElement="Flow_w_state_w_damage"><di:waypoint x="1120" y="335" /><di:waypoint x="1120" y="290" /><di:waypoint x="1220" y="290" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_damage_w_desc_di" bpmnElement="Flow_w_damage_w_desc"><di:waypoint x="1340" y="290" /><di:waypoint x="1415" y="290" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_repair_w_repair_di" bpmnElement="Flow_s_repair_w_repair"><di:waypoint x="1660" y="680" /><di:waypoint x="1680" y="680" /><di:waypoint x="1680" y="360" /><di:waypoint x="1700" y="360" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_repair_w_result_di" bpmnElement="Flow_w_repair_w_result"><di:waypoint x="1820" y="360" /><di:waypoint x="1895" y="360" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_result_w_fixed_di" bpmnElement="Flow_w_result_w_fixed"><di:waypoint x="1920" y="335" /><di:waypoint x="1920" y="270" /><di:waypoint x="2020" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_fixed_w_fixed_end_di" bpmnElement="Flow_w_fixed_w_fixed_end"><di:waypoint x="2140" y="270" /><di:waypoint x="2222" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_result_w_writeoff_di" bpmnElement="Flow_w_result_w_writeoff"><di:waypoint x="1920" y="385" /><di:waypoint x="1920" y="450" /><di:waypoint x="2020" y="450" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_writeoff_w_writeoff_end_di" bpmnElement="Flow_w_writeoff_w_writeoff_end"><di:waypoint x="2140" y="450" /><di:waypoint x="2222" y="450" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_desc_w_damage_di" bpmnElement="Flow_w_desc_w_damage"><di:waypoint x="1440" y="265" /><di:waypoint x="1440" y="230" /><di:waypoint x="1280" y="230" /><di:waypoint x="1280" y="250" /><bpmndi:BPMNLabel><dc:Bounds x="1408" y="240" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_desc_s_repair_di" bpmnElement="Flow_w_desc_s_repair"><di:waypoint x="1465" y="290" /><di:waypoint x="1600" y="290" /><di:waypoint x="1600" y="640" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_e_bring_w_start_di" bpmnElement="Msg_e_bring_w_start"><di:waypoint x="320" y="115" /><di:waypoint x="320" y="342" /><bpmndi:BPMNLabel><dc:Bounds x="330" y="162" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>

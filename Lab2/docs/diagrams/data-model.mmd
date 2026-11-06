@@ -8,7 +8,7 @@ config:
 ---
 erDiagram
     DEPARTMENT ||--o{ APP_USER : "включает"
-    APP_USER ||--o{ APP_USER : "руководит"
+    APP_USER |o--o{ APP_USER : "руководит"
     APP_USER ||--o{ USER_ROLE : "имеет"
     APP_USER ||--o{ LOGIN_CODE : "получает"
     EQUIPMENT_TYPE ||--o{ EQUIPMENT_UNIT : "классифицирует"
@@ -16,13 +16,14 @@ erDiagram
     APP_USER |o--o{ REQUEST : "рассматривает"
     EQUIPMENT_UNIT ||--o{ REQUEST : "запрашивается"
     REQUEST ||--o| ISSUE : "исполняется"
-    APP_USER ||--o{ ISSUE : "выдаёт, принимает"
+    APP_USER ||--o{ ISSUE : "выдаёт"
+    APP_USER |o--o{ ISSUE : "принимает"
     ISSUE ||--o{ EXTENSION_REQUEST : "продлевается"
     APP_USER |o--o{ EXTENSION_REQUEST : "решает"
     EQUIPMENT_UNIT ||--o{ UNIT_STATUS_CHANGE : "меняет статус"
     APP_USER |o--o{ UNIT_STATUS_CHANGE : "выполняет"
     ISSUE |o--o{ UNIT_STATUS_CHANGE : "вызывает"
-    ISSUE |o--o{ NOTIFICATION : "напоминает"
+    ISSUE ||--o{ NOTIFICATION : "напоминает"
     APP_USER ||--o{ NOTIFICATION : "получает"
     APP_USER |o--o{ AUDIT_LOG : "выполняет"
 

@@ -32,5 +32,5 @@ APPS --> DB : SQL, localhost
 TMR --> DB : SQL, localhost
 TMR --> MAIL : SMTP, STARTTLS
 APPS --> MAIL : SMTP, STARTTLS
-DB --> ARC : копия раз в сутки,\nжурнал транзакций не реже раза в 15 минут
+DB --> ARC : копия раз в сутки,\nжурнал транзакций не реже раза в 10 минут
 @enduml

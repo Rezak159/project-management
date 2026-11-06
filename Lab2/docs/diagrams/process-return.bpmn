@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_return" targetNamespace="http://bpmn.io/schema/bpmn" exporter="lab2 tools/bpmn.py" exporterVersion="1.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_return" targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:collaboration id="Collab_return">
     <bpmn:participant id="P_emp" name="Сотрудник" processRef="Process_P_emp" />
     <bpmn:participant id="P_org" name="Приём оборудования" processRef="Process_P_org" />

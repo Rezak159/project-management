@@ -26,6 +26,5 @@
   (запросы и ответы), [review-decisions.md](Lab2/reviews/review-decisions.md) (решения по замечаниям), полные логи
   в `raw/`
 - [Lab2/.agents/skills](Lab2/.agents/skills) – навыки агента и их источники
-- [Lab2/tools](Lab2/tools) – генератор BPMN и рендер изображений
 
 Теги: `v1` – материалы ЛР № 2 до проверки агентом, `v2` – итоговая версия.

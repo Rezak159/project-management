@@ -1,5 +1,5 @@
 @startuml
-title АС УВО – выдача оборудования по заявке (UC-07, UC-09, ФТ-13…ФТ-17, ФТ-31)
+title АС УВО – выдача оборудования по заявке (UC-07, UC-09, ФТ-11, ФТ-13…ФТ-17, ФТ-31)
 skinparam shadowing false
 skinparam defaultFontName Arial
 skinparam sequenceMessageAlign left
@@ -12,6 +12,7 @@ actor "Заведующий\nскладом" as WH
 participant "USB-сканер" as SC
 participant "Браузер" as B
 participant "Выдача\nи возврат" as ISS
+participant "Заявки" as REQ
 participant "Учёт\nоборудования" as EQ
 participant "Журнал" as LOG
 database "PostgreSQL" as DB
@@ -36,21 +37,36 @@ else найдена другая единица, не из заявки
   ISS --> B : «Единица не совпадает с заявкой. Выдача не выполнена»
   note right of B : заведующий сканирует нужную единицу, шаг 5
 else единица из заявки
-  group транзакция
-    ISS -> DB : SELECT … FROM app_user WHERE id = сотрудник FOR UPDATE
-    ISS -> DB : число невозвращённых выдач сотрудника
-    alt на руках столько же, сколько лимит
+  group транзакция (блокировки: заявка → сотрудник → единица)
+    ISS -> REQ : заблокировать заявку для выдачи
+    REQ -> DB : SELECT … FROM request WHERE id = 101 FOR UPDATE
+    alt статус не «подтверждено» или дата начала прошла
       ISS -> DB : ROLLBACK
-      ISS --> B : «У сотрудника на руках N единиц из N. Выдача не выполнена»
-    else лимит не достигнут
-      ISS -> DB : INSERT issue: issued_at, issued_by_id, return_due_date из заявки
-      ISS -> EQ : сменить статус единицы: забронировано → выдано
-      EQ -> DB : UPDATE equipment_unit, INSERT unit_status_change
-      ISS -> DB : заявка № 101: status = 'fulfilled'
-      ISS -> LOG : выдача
-      ISS -> DB : COMMIT
-      ISS --> B : «Выдано»\nи пометка «наступила дата поверки», если next_check_date не позже сегодня
+      ISS --> B : «Заявка отменена или истекла. Выдача не выполнена»
+    else заявку можно исполнить
+      ISS -> DB : SELECT … FROM app_user WHERE id = сотрудник FOR UPDATE
+      ISS -> DB : число невозвращённых выдач сотрудника
+      alt на руках не меньше, чем лимит
+        ISS -> DB : ROLLBACK
+        ISS --> B : «У сотрудника на руках N единиц при лимите M. Выдача не выполнена»
+      else лимит не достигнут
+        ISS -> DB : INSERT issue: issued_at, issued_by_id, return_due_date из заявки
+        ISS -> EQ : сменить статус единицы: забронировано → выдано
+        EQ -> DB : UPDATE equipment_unit\n… WHERE status = 'reserved',\nINSERT unit_status_change
+        ISS -> REQ : заявка исполнена
+        REQ -> DB : UPDATE request SET status = 'fulfilled'\nWHERE id = 101 AND status = 'confirmed'
+        ISS -> LOG : выдача
+        ISS -> DB : COMMIT
+        ISS --> B : «Выдано»\nи пометка «наступила дата поверки», если next_check_date не позже сегодня
+      end
     end
   end
 end
+
+note over WH, DB
+Заявку можно исполнить, если её статус «подтверждено» и сегодня не позже даты начала. Проверку выполняет
+та же функция модуля «Заявки», что и задание истечения, поэтому заявка, истёкшая после 00:00, не выдаётся,
+даже если задание ещё не запускалось. Отмена и истечение меняют статус условным UPDATE … WHERE
+status IN ('pending', 'confirmed') и ждут блокировку заявки, поэтому одновременно с выдачей не выполняются.
+end note
 @enduml

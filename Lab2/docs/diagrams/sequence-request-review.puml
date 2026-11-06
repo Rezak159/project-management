@@ -36,7 +36,7 @@ REQ --> RB : заявка № 102 в работе у Б (так же, шаги 2
 par ответственное лицо А
   RA -> REQ : подтвердить № 101
   group транзакция
-    REQ -> DB : проверить: № 101 «на рассмотрении», reviewer_id = А
+    REQ -> DB : SELECT … FROM request WHERE id = 101\nAND status = 'pending' AND reviewer_id = А FOR UPDATE
     REQ -> EQ : забронировать единицу № 7 по заявке № 101
     EQ -> DB : UPDATE equipment_unit SET status = 'reserved'\nWHERE id = 7 AND status = 'available'
     DB --> EQ : изменена 1 строка
@@ -49,7 +49,7 @@ par ответственное лицо А
 else ответственное лицо Б
   RB -> REQ : подтвердить № 102
   group транзакция
-    REQ -> DB : проверить: № 102 «на рассмотрении», reviewer_id = Б
+    REQ -> DB : SELECT … FROM request WHERE id = 102\nAND status = 'pending' AND reviewer_id = Б FOR UPDATE
     REQ -> EQ : забронировать единицу № 7 по заявке № 102
     EQ -> DB : UPDATE equipment_unit SET status = 'reserved'\nWHERE id = 7 AND status = 'available'
     note right of DB
@@ -67,6 +67,9 @@ end
 
 note over RA, DB
 Какая из транзакций будет первой, решает СУБД; при любом порядке подтверждена ровно одна заявка.
+Если SELECT … FOR UPDATE не нашёл заявку (сотрудник отменил её, или она истекла), транзакция откатывается и
+ответственное лицо видит «Заявка отменена или истекла». Отмена и истечение меняют статус условным UPDATE … WHERE
+status IN ('pending', 'confirmed') и ждут блокировку заявки, поэтому с подтверждением не пересекаются.
 Сотрудник видит новый статус своей заявки (ФТ-28).
 end note
 @enduml

@@ -32,8 +32,8 @@ erDiagram
         varchar full_name "ФИО"
         bigint department_id FK
         varchar position "должность"
-        varchar email UK
-        bigint manager_id FK "руководитель, может быть пустым"
+        varchar email UK "без учёта регистра"
+        bigint manager_id FK "руководитель, пустой только при лимите 0"
         int item_limit "лимит единиц на руках"
         varchar login UK
         varchar password_hash
@@ -89,17 +89,17 @@ erDiagram
         bigint issued_by_id FK "заведующий складом"
         timestamp issued_at
         date return_due_date "текущий срок, пустой – бессрочно"
-        timestamp returned_at
+        timestamp returned_at "закрытие: возврат или утеря"
         bigint received_by_id FK
-        varchar return_state "intact, damaged"
+        varchar return_state "intact, damaged, lost"
         text damage_description
-        int overdue_days "длительность просрочки"
+        int overdue_days "дни просрочки, с учётом продлений"
     }
     EXTENSION_REQUEST["Запрос продления"] {
         bigint id PK
         bigint issue_id FK
         date new_due_date
-        varchar status "pending, approved, rejected"
+        varchar status "pending, approved, rejected, closed"
         bigint decided_by_id FK "руководитель"
         timestamp created_at
         timestamp decided_at
@@ -120,13 +120,14 @@ erDiagram
         bigint recipient_id FK
         varchar kind "due_soon, overdue, manager_overdue"
         date for_date "день, за который письмо"
-        varchar status "pending, sent, failed"
+        date due_date "срок, от которого рассчитано"
+        varchar status "pending, sent, failed, cancelled"
         int attempts
         timestamp sent_at
     }
     AUDIT_LOG["Запись журнала"] {
         bigint id PK
-        bigint user_id FK
+        bigint user_id FK "пусто – система или неизвестный логин"
         timestamp created_at
         varchar action
         varchar object_type

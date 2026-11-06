@@ -4,7 +4,7 @@ skinparam shadowing false
 skinparam defaultFontName Arial
 skinparam sequenceMessageAlign left
 skinparam responseMessageBelowArrow true
-skinparam maxMessageSize 270
+skinparam maxMessageSize 300
 hide footbox
 autonumber
 
@@ -22,25 +22,34 @@ ISS -> DB : выдача единицы, у которой returned_at пуст
 alt открытой выдачи нет
   ISS --> B : «Единица не числится выданной. Возврат не выполнен»
 else выдача найдена
-  ISS --> B : сотрудник, дата выдачи, срок возврата, дни просрочки
+  ISS --> B : форма возврата по выдаче № 57: сотрудник, дата выдачи, срок, дни просрочки
   WH -> WH : осмотреть единицу
   WH -> B : отметка «повреждена», описание повреждения
-  B -> ISS : принять возврат
+  B -> ISS : принять возврат по выдаче № 57
   alt отметка «повреждена», описание пустое
     ISS --> B : «Опишите повреждение». Данные не сохранены
   else отметка заполнена
-    group транзакция
-      ISS -> DB : UPDATE issue: returned_at, received_by_id,\nreturn_state = 'damaged', damage_description,\noverdue_days = дни после срока (0, если в срок)
-      ISS -> EQ : сменить статус единицы: выдано → починка
-      EQ -> DB : UPDATE equipment_unit, INSERT unit_status_change
-      ISS -> LOG : возврат с повреждением
+    group транзакция (блокировки: выдача → единица)
+      ISS -> DB : SELECT … FROM issue WHERE id = 57\nAND returned_at IS NULL FOR UPDATE
+      alt 0 строк – возврат уже оформлен (другое окно, повторная отправка)
+        ISS -> DB : ROLLBACK
+        ISS --> B : «Возврат по этой выдаче уже принят». Отметка и статус единицы не меняются
+      else выдача открыта
+        ISS -> DB : UPDATE issue: returned_at, received_by_id,\nreturn_state = 'damaged', damage_description,\noverdue_days = overdue_days + дни после срока
+        ISS -> EQ : сменить статус единицы: выдано → починка
+        EQ -> DB : UPDATE equipment_unit\n… WHERE status = 'issued',\nINSERT unit_status_change
+        ISS -> LOG : возврат с повреждением
+        ISS -> DB : COMMIT
+        ISS --> B : «Возврат принят. Единица в статусе «починка»»
+      end
     end
-    ISS --> B : «Возврат принят. Единица в статусе «починка»»
   end
 end
 
 note over WH, DB
-При отметке «без повреждений» описание не требуется, единица переходит в «в наличии» (ФТ-19).
-Отметка заведующего окончательная и после сохранения не меняется (ФТ-18).
+Форма привязана к выдаче № 57, а не к единице: старая форма, открытая до прежнего возврата, не изменит новую
+выдачу той же единицы. При отметке «без повреждений» описание не требуется, единица переходит в «в наличии»
+(ФТ-19). Отметка заведующего окончательная (ФТ-18). Письма и запрос продления по закрытой выдаче закрывает
+«Контроль сроков» перед ближайшей отправкой писем (sequence-deadlines.puml); «Выдача и возврат» его не вызывает.
 end note
 @enduml

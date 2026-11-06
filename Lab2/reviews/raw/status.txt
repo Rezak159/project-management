@@ -1,0 +1,4 @@
+architecture-review exit 0
+adr-review exit 0
+compliance-check exit 0
+round2 exit 0

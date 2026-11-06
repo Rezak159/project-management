@@ -1,0 +1,65 @@
+@startuml
+title АС УВО – ежедневная обработка сроков (UC-21, ФТ-11, ФТ-21, ФТ-22, ФТ-24)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 280
+hide footbox
+autonumber
+
+participant "Планировщик" as SCH
+participant "Заявки" as REQ
+participant "Учёт\nоборудования" as EQ
+participant "Контроль\nсроков" as DL
+participant "Уведомления" as NTF
+participant "Журнал" as LOG
+database "PostgreSQL" as DB
+participant "Почтовый сервер\nзаказчика" as SMTP
+
+== Первый запуск после 00:00 по часовому поясу сервера – истечение заявок (ФТ-11, Д-04) ==
+SCH -> REQ : закрыть заявки, дата начала которых прошла
+REQ -> DB : заявки «на рассмотрении» и «подтверждено» со start_date раньше сегодняшней
+loop по каждой заявке, отдельная транзакция
+  REQ -> DB : status = 'expired'
+  opt заявка была подтверждена
+    REQ -> EQ : снять бронь: забронировано → в наличии
+    EQ -> DB : UPDATE equipment_unit, INSERT unit_status_change
+  end
+  REQ -> LOG : заявка истекла (пользователь – система)
+end
+
+== Запуски в рабочие часы по графику – письма (ФТ-21, ФТ-22, ФТ-24) ==
+SCH -> DL : проверить сроки возврата
+DL -> DB : невозвращённые выдачи с return_due_date:\nдо срока N дней или меньше (N из reminder_days) или срок прошёл
+loop по каждой выдаче
+  DL -> DB : INSERT notification (issue_id, recipient_id, kind, for_date)\nON CONFLICT DO NOTHING
+end
+note right of DL
+скоро срок – due_soon сотруднику, for_date = срок − N, один раз на срок;
+новая просрочка – manager_overdue руководителю, for_date = срок + 1, один раз;
+просрочка – overdue сотруднику, for_date = сегодня, каждый рабочий день.
+Бессрочные выдачи не выбираются.
+end note
+
+SCH -> NTF : отправить письма из очереди
+NTF -> DB : notification со status = 'pending'
+loop по каждому письму
+  NTF -> SMTP : письмо через почтовый ящик заказчика
+  alt письмо принято
+    SMTP --> NTF : принято
+    NTF -> DB : status = 'sent', sent_at
+  else почтовый сервер недоступен или отклонил письмо
+    SMTP --> NTF : ошибка
+    NTF -> DB : attempts + 1; на 5-й попытке status = 'failed'
+    NTF -> LOG : ошибка отправки письма (видна администратору)
+  end
+end
+
+note over SCH, SMTP
+Планировщик запускается каждые 15 минут, все задания повторяемы: заявки и письма, обработанные раньше, не выбираются снова.
+Письмо «pending», не принятое сервером, отправляется при следующем запуске. Повторная проверка за тот же день
+новых писем не создаёт: уникальный индекс notification (issue_id, kind, for_date).
+Тем же запуском выполняются очистка журнала и проверка архивирования WAL – на диаграмме не показаны (architecture.md, раздел 5).
+end note
+@enduml

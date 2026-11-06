@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_request_issue" targetNamespace="http://bpmn.io/schema/bpmn" exporter="lab2 tools/bpmn.py" exporterVersion="1.0">
+  <bpmn:collaboration id="Collab_request_issue">
+    <bpmn:participant id="P_emp" name="Сотрудник" processRef="Process_P_emp" />
+    <bpmn:participant id="P_org" name="Учёт и выдача оборудования" processRef="Process_P_org" />
+    <bpmn:messageFlow id="Msg_e_submit_s_start" name="Заявка" sourceRef="e_submit" targetRef="s_start" />
+    <bpmn:messageFlow id="Msg_s_confirmed_e_status" name="Статус «подтверждено»" sourceRef="s_confirmed" targetRef="e_status" />
+    <bpmn:messageFlow id="Msg_s_rejected_end_e_status" name="Статус «отклонено»" sourceRef="s_rejected_end" targetRef="e_status" />
+    <bpmn:messageFlow id="Msg_e_cancel_s_cancel_msg" name="Отмена заявки" sourceRef="e_cancel" targetRef="s_cancel_msg" />
+    <bpmn:messageFlow id="Msg_e_go_w_came" name="Обращение на склад" sourceRef="e_go" targetRef="w_came" />
+    <bpmn:messageFlow id="Msg_w_hand_e_got" name="Единица" sourceRef="w_hand" targetRef="e_got" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_P_emp" isExecutable="false">
+    <bpmn:startEvent id="e_start" name="Нужно оборудование">
+      <bpmn:outgoing>Flow_e_start_e_submit</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="e_submit" name="Подать заявку на единицу «в наличии»">
+      <bpmn:incoming>Flow_e_start_e_submit</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_submit_e_status</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:intermediateCatchEvent id="e_status" name="Решение по заявке получено">
+      <bpmn:incoming>Flow_e_submit_e_status</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_status_e_ok</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="e_status_def" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:exclusiveGateway id="e_ok" name="Заявка подтверждена?">
+      <bpmn:incoming>Flow_e_status_e_ok</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_ok_e_rejected</bpmn:outgoing>
+      <bpmn:outgoing>Flow_e_ok_e_need</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="e_rejected" name="Оборудование не получено">
+      <bpmn:incoming>Flow_e_ok_e_rejected</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="e_need" name="Оборудование ещё нужно?">
+      <bpmn:incoming>Flow_e_ok_e_need</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_need_e_cancel</bpmn:outgoing>
+      <bpmn:outgoing>Flow_e_need_e_go</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sendTask id="e_cancel" name="Отменить заявку">
+      <bpmn:incoming>Flow_e_need_e_cancel</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_cancel_e_cancelled</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="e_cancelled" name="Заявка отменена">
+      <bpmn:incoming>Flow_e_cancel_e_cancelled</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:manualTask id="e_go" name="Прийти на склад в дату начала">
+      <bpmn:incoming>Flow_e_need_e_go</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_go_e_got</bpmn:outgoing>
+    </bpmn:manualTask>
+    <bpmn:intermediateCatchEvent id="e_got" name="Единица получена">
+      <bpmn:incoming>Flow_e_go_e_got</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_got_e_end</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="e_got_def" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="e_end" name="Оборудование получено">
+      <bpmn:incoming>Flow_e_got_e_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_e_start_e_submit" sourceRef="e_start" targetRef="e_submit" />
+    <bpmn:sequenceFlow id="Flow_e_submit_e_status" sourceRef="e_submit" targetRef="e_status" />
+    <bpmn:sequenceFlow id="Flow_e_status_e_ok" sourceRef="e_status" targetRef="e_ok" />
+    <bpmn:sequenceFlow id="Flow_e_ok_e_rejected" name="нет" sourceRef="e_ok" targetRef="e_rejected" />
+    <bpmn:sequenceFlow id="Flow_e_ok_e_need" name="да" sourceRef="e_ok" targetRef="e_need" />
+    <bpmn:sequenceFlow id="Flow_e_need_e_cancel" name="нет" sourceRef="e_need" targetRef="e_cancel" />
+    <bpmn:sequenceFlow id="Flow_e_cancel_e_cancelled" sourceRef="e_cancel" targetRef="e_cancelled" />
+    <bpmn:sequenceFlow id="Flow_e_need_e_go" name="да" sourceRef="e_need" targetRef="e_go" />
+    <bpmn:sequenceFlow id="Flow_e_go_e_got" sourceRef="e_go" targetRef="e_got" />
+    <bpmn:sequenceFlow id="Flow_e_got_e_end" sourceRef="e_got" targetRef="e_end" />
+  </bpmn:process>
+  <bpmn:process id="Process_P_org" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_P_org">
+      <bpmn:lane id="L_sys" name="АС УВО">
+        <bpmn:flowNodeRef>s_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_queue</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_book</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_booked</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_confirmed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_rejected</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_rejected_end</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_wait</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_cancel_msg</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_cancel</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_cancel_end</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_timer</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_expire</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_expire_end</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_check</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_check_ok</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_limit_end</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>s_issue</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="L_resp" name="Ответственное лицо">
+        <bpmn:flowNodeRef>r_take</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r_review</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r_decision</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r_confirm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>r_reject</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="L_wh" name="Заведующий складом">
+        <bpmn:flowNodeRef>w_came</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>w_scan</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>w_hand</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>w_end</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="s_start" name="Заявка получена">
+      <bpmn:outgoing>Flow_s_start_s_queue</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="s_start_def" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="s_queue" name="Поставить заявку в очередь">
+      <bpmn:incoming>Flow_s_start_s_queue</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_queue_r_take</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="r_take" name="Взять заявку из очереди">
+      <bpmn:incoming>Flow_s_queue_r_take</bpmn:incoming>
+      <bpmn:outgoing>Flow_r_take_r_review</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="r_review" name="Рассмотреть заявку">
+      <bpmn:incoming>Flow_r_take_r_review</bpmn:incoming>
+      <bpmn:outgoing>Flow_r_review_r_decision</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="r_decision" name="Решение?">
+      <bpmn:incoming>Flow_r_review_r_decision</bpmn:incoming>
+      <bpmn:outgoing>Flow_r_decision_r_confirm</bpmn:outgoing>
+      <bpmn:outgoing>Flow_r_decision_r_reject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="r_confirm" name="Подтвердить заявку">
+      <bpmn:incoming>Flow_r_decision_r_confirm</bpmn:incoming>
+      <bpmn:outgoing>Flow_r_confirm_s_book</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="r_reject" name="Отклонить заявку">
+      <bpmn:incoming>Flow_r_decision_r_reject</bpmn:incoming>
+      <bpmn:outgoing>Flow_r_reject_s_rejected</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="s_book" name="Забронировать единицу">
+      <bpmn:incoming>Flow_r_confirm_s_book</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_book_s_booked</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="s_booked" name="Единица была «в наличии»?">
+      <bpmn:incoming>Flow_s_book_s_booked</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_booked_s_confirmed</bpmn:outgoing>
+      <bpmn:outgoing>Flow_s_booked_s_rejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="s_confirmed" name="Установить «подтверждено»">
+      <bpmn:incoming>Flow_s_booked_s_confirmed</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_confirmed_s_wait</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="s_rejected" name="Установить «отклонено»">
+      <bpmn:incoming>Flow_s_booked_s_rejected</bpmn:incoming>
+      <bpmn:incoming>Flow_r_reject_s_rejected</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_rejected_s_rejected_end</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="s_rejected_end" name="Заявка отклонена">
+      <bpmn:incoming>Flow_s_rejected_s_rejected_end</bpmn:incoming>
+      <bpmn:messageEventDefinition id="s_rejected_end_def" />
+    </bpmn:endEvent>
+    <bpmn:eventBasedGateway id="s_wait" name="">
+      <bpmn:incoming>Flow_s_confirmed_s_wait</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_wait_s_cancel_msg</bpmn:outgoing>
+      <bpmn:outgoing>Flow_s_wait_s_timer</bpmn:outgoing>
+      <bpmn:outgoing>Flow_s_wait_w_came</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:intermediateCatchEvent id="s_cancel_msg" name="Сотрудник отменил заявку">
+      <bpmn:incoming>Flow_s_wait_s_cancel_msg</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_cancel_msg_s_cancel</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="s_cancel_msg_def" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="s_cancel" name="Установить «отменена», снять бронь">
+      <bpmn:incoming>Flow_s_cancel_msg_s_cancel</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_cancel_s_cancel_end</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="s_cancel_end" name="Заявка отменена">
+      <bpmn:incoming>Flow_s_cancel_s_cancel_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateCatchEvent id="s_timer" name="Конец даты начала использования">
+      <bpmn:incoming>Flow_s_wait_s_timer</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_timer_s_expire</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="s_timer_def" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="s_expire" name="Установить «истекла», снять бронь">
+      <bpmn:incoming>Flow_s_timer_s_expire</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_expire_s_expire_end</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="s_expire_end" name="Заявка истекла">
+      <bpmn:incoming>Flow_s_expire_s_expire_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateCatchEvent id="w_came" name="Сотрудник пришёл на склад">
+      <bpmn:incoming>Flow_s_wait_w_came</bpmn:incoming>
+      <bpmn:outgoing>Flow_w_came_w_scan</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="w_came_def" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:userTask id="w_scan" name="Отсканировать штрихкод или ввести номер">
+      <bpmn:incoming>Flow_w_came_w_scan</bpmn:incoming>
+      <bpmn:incoming>Flow_s_check_ok_w_scan</bpmn:incoming>
+      <bpmn:outgoing>Flow_w_scan_s_check</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="s_check" name="Проверить единицу и лимит">
+      <bpmn:incoming>Flow_w_scan_s_check</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_check_s_check_ok</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="s_check_ok" name="Проверка пройдена?">
+      <bpmn:incoming>Flow_s_check_s_check_ok</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_check_ok_s_issue</bpmn:outgoing>
+      <bpmn:outgoing>Flow_s_check_ok_s_limit_end</bpmn:outgoing>
+      <bpmn:outgoing>Flow_s_check_ok_w_scan</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="s_limit_end" name="Выдача не выполнена: лимит">
+      <bpmn:incoming>Flow_s_check_ok_s_limit_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="s_issue" name="Записать выдачу">
+      <bpmn:incoming>Flow_s_check_ok_s_issue</bpmn:incoming>
+      <bpmn:outgoing>Flow_s_issue_w_hand</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:manualTask id="w_hand" name="Передать единицу сотруднику">
+      <bpmn:incoming>Flow_s_issue_w_hand</bpmn:incoming>
+      <bpmn:outgoing>Flow_w_hand_w_end</bpmn:outgoing>
+    </bpmn:manualTask>
+    <bpmn:endEvent id="w_end" name="Оборудование выдано">
+      <bpmn:incoming>Flow_w_hand_w_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_s_start_s_queue" sourceRef="s_start" targetRef="s_queue" />
+    <bpmn:sequenceFlow id="Flow_s_queue_r_take" sourceRef="s_queue" targetRef="r_take" />
+    <bpmn:sequenceFlow id="Flow_r_take_r_review" sourceRef="r_take" targetRef="r_review" />
+    <bpmn:sequenceFlow id="Flow_r_review_r_decision" sourceRef="r_review" targetRef="r_decision" />
+    <bpmn:sequenceFlow id="Flow_r_decision_r_confirm" name="подтвердить" sourceRef="r_decision" targetRef="r_confirm" />
+    <bpmn:sequenceFlow id="Flow_r_decision_r_reject" name="отклонить" sourceRef="r_decision" targetRef="r_reject" />
+    <bpmn:sequenceFlow id="Flow_r_confirm_s_book" sourceRef="r_confirm" targetRef="s_book" />
+    <bpmn:sequenceFlow id="Flow_s_book_s_booked" sourceRef="s_book" targetRef="s_booked" />
+    <bpmn:sequenceFlow id="Flow_s_booked_s_confirmed" name="да" sourceRef="s_booked" targetRef="s_confirmed" />
+    <bpmn:sequenceFlow id="Flow_s_booked_s_rejected" name="нет" sourceRef="s_booked" targetRef="s_rejected" />
+    <bpmn:sequenceFlow id="Flow_r_reject_s_rejected" sourceRef="r_reject" targetRef="s_rejected" />
+    <bpmn:sequenceFlow id="Flow_s_rejected_s_rejected_end" sourceRef="s_rejected" targetRef="s_rejected_end" />
+    <bpmn:sequenceFlow id="Flow_s_confirmed_s_wait" sourceRef="s_confirmed" targetRef="s_wait" />
+    <bpmn:sequenceFlow id="Flow_s_wait_s_cancel_msg" sourceRef="s_wait" targetRef="s_cancel_msg" />
+    <bpmn:sequenceFlow id="Flow_s_cancel_msg_s_cancel" sourceRef="s_cancel_msg" targetRef="s_cancel" />
+    <bpmn:sequenceFlow id="Flow_s_cancel_s_cancel_end" sourceRef="s_cancel" targetRef="s_cancel_end" />
+    <bpmn:sequenceFlow id="Flow_s_wait_s_timer" sourceRef="s_wait" targetRef="s_timer" />
+    <bpmn:sequenceFlow id="Flow_s_timer_s_expire" sourceRef="s_timer" targetRef="s_expire" />
+    <bpmn:sequenceFlow id="Flow_s_expire_s_expire_end" sourceRef="s_expire" targetRef="s_expire_end" />
+    <bpmn:sequenceFlow id="Flow_s_wait_w_came" sourceRef="s_wait" targetRef="w_came" />
+    <bpmn:sequenceFlow id="Flow_w_came_w_scan" sourceRef="w_came" targetRef="w_scan" />
+    <bpmn:sequenceFlow id="Flow_w_scan_s_check" sourceRef="w_scan" targetRef="s_check" />
+    <bpmn:sequenceFlow id="Flow_s_check_s_check_ok" sourceRef="s_check" targetRef="s_check_ok" />
+    <bpmn:sequenceFlow id="Flow_s_check_ok_s_issue" name="да" sourceRef="s_check_ok" targetRef="s_issue" />
+    <bpmn:sequenceFlow id="Flow_s_check_ok_s_limit_end" name="лимит достигнут" sourceRef="s_check_ok" targetRef="s_limit_end" />
+    <bpmn:sequenceFlow id="Flow_s_issue_w_hand" sourceRef="s_issue" targetRef="w_hand" />
+    <bpmn:sequenceFlow id="Flow_w_hand_w_end" sourceRef="w_hand" targetRef="w_end" />
+    <bpmn:sequenceFlow id="Flow_s_check_ok_w_scan" name="единица не из заявки" sourceRef="s_check_ok" targetRef="w_scan" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_request_issue">
+    <bpmndi:BPMNPlane id="Plane_request_issue" bpmnElement="Collab_request_issue">
+      <bpmndi:BPMNShape id="P_emp_di" bpmnElement="P_emp" isHorizontal="true"><dc:Bounds x="0" y="0" width="3600" height="230" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_start_di" bpmnElement="e_start"><dc:Bounds x="142" y="137" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_submit_di" bpmnElement="e_submit"><dc:Bounds x="260" y="115" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_status_di" bpmnElement="e_status"><dc:Bounds x="1582" y="137" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1550" y="93" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_ok_di" bpmnElement="e_ok" isMarkerVisible="true"><dc:Bounds x="1735" y="130" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_rejected_di" bpmnElement="e_rejected"><dc:Bounds x="1902" y="37" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_need_di" bpmnElement="e_need" isMarkerVisible="true"><dc:Bounds x="2055" y="130" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_cancel_di" bpmnElement="e_cancel"><dc:Bounds x="2180" y="15" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_cancelled_di" bpmnElement="e_cancelled"><dc:Bounds x="2382" y="37" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_go_di" bpmnElement="e_go"><dc:Bounds x="2340" y="115" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_got_di" bpmnElement="e_got"><dc:Bounds x="3342" y="137" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="3310" y="93" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_end_di" bpmnElement="e_end"><dc:Bounds x="3502" y="137" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P_org_di" bpmnElement="P_org" isHorizontal="true"><dc:Bounds x="0" y="280" width="3600" height="740" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L_sys_di" bpmnElement="L_sys" isHorizontal="true"><dc:Bounds x="30" y="280" width="3570" height="330" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L_resp_di" bpmnElement="L_resp" isHorizontal="true"><dc:Bounds x="30" y="610" width="3570" height="240" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L_wh_di" bpmnElement="L_wh" isHorizontal="true"><dc:Bounds x="30" y="850" width="3570" height="170" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_start_di" bpmnElement="s_start"><dc:Bounds x="302" y="427" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_queue_di" bpmnElement="s_queue"><dc:Bounds x="420" y="405" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="r_take_di" bpmnElement="r_take"><dc:Bounds x="580" y="635" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="r_review_di" bpmnElement="r_review"><dc:Bounds x="740" y="635" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="r_decision_di" bpmnElement="r_decision" isMarkerVisible="true"><dc:Bounds x="935" y="650" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="r_confirm_di" bpmnElement="r_confirm"><dc:Bounds x="1060" y="635" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="r_reject_di" bpmnElement="r_reject"><dc:Bounds x="1060" y="745" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_book_di" bpmnElement="s_book"><dc:Bounds x="1220" y="405" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_booked_di" bpmnElement="s_booked" isMarkerVisible="true"><dc:Bounds x="1415" y="420" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_confirmed_di" bpmnElement="s_confirmed"><dc:Bounds x="1540" y="300" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_rejected_di" bpmnElement="s_rejected"><dc:Bounds x="1540" y="510" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_rejected_end_di" bpmnElement="s_rejected_end"><dc:Bounds x="1742" y="532" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_wait_di" bpmnElement="s_wait"><dc:Bounds x="1895" y="315" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_cancel_msg_di" bpmnElement="s_cancel_msg"><dc:Bounds x="2062" y="322" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_cancel_di" bpmnElement="s_cancel"><dc:Bounds x="2180" y="300" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_cancel_end_di" bpmnElement="s_cancel_end"><dc:Bounds x="2382" y="322" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_timer_di" bpmnElement="s_timer"><dc:Bounds x="2062" y="427" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_expire_di" bpmnElement="s_expire"><dc:Bounds x="2180" y="405" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_expire_end_di" bpmnElement="s_expire_end"><dc:Bounds x="2382" y="427" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_came_di" bpmnElement="w_came"><dc:Bounds x="2542" y="917" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_scan_di" bpmnElement="w_scan"><dc:Bounds x="2660" y="895" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_check_di" bpmnElement="s_check"><dc:Bounds x="2820" y="510" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_check_ok_di" bpmnElement="s_check_ok" isMarkerVisible="true"><dc:Bounds x="3015" y="525" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_limit_end_di" bpmnElement="s_limit_end"><dc:Bounds x="3182" y="322" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_issue_di" bpmnElement="s_issue"><dc:Bounds x="3140" y="510" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_hand_di" bpmnElement="w_hand"><dc:Bounds x="3300" y="895" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w_end_di" bpmnElement="w_end"><dc:Bounds x="3502" y="917" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_e_start_e_submit_di" bpmnElement="Flow_e_start_e_submit"><di:waypoint x="178" y="155" /><di:waypoint x="260" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_submit_e_status_di" bpmnElement="Flow_e_submit_e_status"><di:waypoint x="380" y="155" /><di:waypoint x="1582" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_status_e_ok_di" bpmnElement="Flow_e_status_e_ok"><di:waypoint x="1618" y="155" /><di:waypoint x="1735" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_ok_e_rejected_di" bpmnElement="Flow_e_ok_e_rejected"><di:waypoint x="1760" y="130" /><di:waypoint x="1760" y="55" /><di:waypoint x="1902" y="55" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_ok_e_need_di" bpmnElement="Flow_e_ok_e_need"><di:waypoint x="1785" y="155" /><di:waypoint x="2055" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_need_e_cancel_di" bpmnElement="Flow_e_need_e_cancel"><di:waypoint x="2080" y="130" /><di:waypoint x="2080" y="55" /><di:waypoint x="2180" y="55" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_cancel_e_cancelled_di" bpmnElement="Flow_e_cancel_e_cancelled"><di:waypoint x="2300" y="55" /><di:waypoint x="2382" y="55" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_need_e_go_di" bpmnElement="Flow_e_need_e_go"><di:waypoint x="2105" y="155" /><di:waypoint x="2340" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_go_e_got_di" bpmnElement="Flow_e_go_e_got"><di:waypoint x="2460" y="155" /><di:waypoint x="3342" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_got_e_end_di" bpmnElement="Flow_e_got_e_end"><di:waypoint x="3378" y="155" /><di:waypoint x="3502" y="155" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_start_s_queue_di" bpmnElement="Flow_s_start_s_queue"><di:waypoint x="338" y="445" /><di:waypoint x="420" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_queue_r_take_di" bpmnElement="Flow_s_queue_r_take"><di:waypoint x="540" y="445" /><di:waypoint x="560" y="445" /><di:waypoint x="560" y="675" /><di:waypoint x="580" y="675" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r_take_r_review_di" bpmnElement="Flow_r_take_r_review"><di:waypoint x="700" y="675" /><di:waypoint x="740" y="675" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r_review_r_decision_di" bpmnElement="Flow_r_review_r_decision"><di:waypoint x="860" y="675" /><di:waypoint x="935" y="675" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r_decision_r_confirm_di" bpmnElement="Flow_r_decision_r_confirm"><di:waypoint x="985" y="675" /><di:waypoint x="1060" y="675" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r_decision_r_reject_di" bpmnElement="Flow_r_decision_r_reject"><di:waypoint x="960" y="700" /><di:waypoint x="960" y="785" /><di:waypoint x="1060" y="785" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r_confirm_s_book_di" bpmnElement="Flow_r_confirm_s_book"><di:waypoint x="1180" y="675" /><di:waypoint x="1200" y="675" /><di:waypoint x="1200" y="445" /><di:waypoint x="1220" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_book_s_booked_di" bpmnElement="Flow_s_book_s_booked"><di:waypoint x="1340" y="445" /><di:waypoint x="1415" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_booked_s_confirmed_di" bpmnElement="Flow_s_booked_s_confirmed"><di:waypoint x="1440" y="420" /><di:waypoint x="1440" y="340" /><di:waypoint x="1540" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_booked_s_rejected_di" bpmnElement="Flow_s_booked_s_rejected"><di:waypoint x="1440" y="470" /><di:waypoint x="1440" y="550" /><di:waypoint x="1540" y="550" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r_reject_s_rejected_di" bpmnElement="Flow_r_reject_s_rejected"><di:waypoint x="1180" y="785" /><di:waypoint x="1360" y="785" /><di:waypoint x="1360" y="550" /><di:waypoint x="1540" y="550" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_rejected_s_rejected_end_di" bpmnElement="Flow_s_rejected_s_rejected_end"><di:waypoint x="1660" y="550" /><di:waypoint x="1742" y="550" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_confirmed_s_wait_di" bpmnElement="Flow_s_confirmed_s_wait"><di:waypoint x="1660" y="340" /><di:waypoint x="1895" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_wait_s_cancel_msg_di" bpmnElement="Flow_s_wait_s_cancel_msg"><di:waypoint x="1945" y="340" /><di:waypoint x="2062" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_cancel_msg_s_cancel_di" bpmnElement="Flow_s_cancel_msg_s_cancel"><di:waypoint x="2098" y="340" /><di:waypoint x="2180" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_cancel_s_cancel_end_di" bpmnElement="Flow_s_cancel_s_cancel_end"><di:waypoint x="2300" y="340" /><di:waypoint x="2382" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_wait_s_timer_di" bpmnElement="Flow_s_wait_s_timer"><di:waypoint x="1920" y="365" /><di:waypoint x="1920" y="445" /><di:waypoint x="2062" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_timer_s_expire_di" bpmnElement="Flow_s_timer_s_expire"><di:waypoint x="2098" y="445" /><di:waypoint x="2180" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_expire_s_expire_end_di" bpmnElement="Flow_s_expire_s_expire_end"><di:waypoint x="2300" y="445" /><di:waypoint x="2382" y="445" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_wait_w_came_di" bpmnElement="Flow_s_wait_w_came"><di:waypoint x="1920" y="365" /><di:waypoint x="1920" y="935" /><di:waypoint x="2542" y="935" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_came_w_scan_di" bpmnElement="Flow_w_came_w_scan"><di:waypoint x="2578" y="935" /><di:waypoint x="2660" y="935" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_scan_s_check_di" bpmnElement="Flow_w_scan_s_check"><di:waypoint x="2780" y="935" /><di:waypoint x="2800" y="935" /><di:waypoint x="2800" y="550" /><di:waypoint x="2820" y="550" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_check_s_check_ok_di" bpmnElement="Flow_s_check_s_check_ok"><di:waypoint x="2940" y="550" /><di:waypoint x="3015" y="550" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_check_ok_s_issue_di" bpmnElement="Flow_s_check_ok_s_issue"><di:waypoint x="3065" y="550" /><di:waypoint x="3140" y="550" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_check_ok_s_limit_end_di" bpmnElement="Flow_s_check_ok_s_limit_end"><di:waypoint x="3040" y="525" /><di:waypoint x="3040" y="340" /><di:waypoint x="3182" y="340" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_issue_w_hand_di" bpmnElement="Flow_s_issue_w_hand"><di:waypoint x="3260" y="550" /><di:waypoint x="3280" y="550" /><di:waypoint x="3280" y="935" /><di:waypoint x="3300" y="935" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_hand_w_end_di" bpmnElement="Flow_w_hand_w_end"><di:waypoint x="3420" y="935" /><di:waypoint x="3502" y="935" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_s_check_ok_w_scan_di" bpmnElement="Flow_s_check_ok_w_scan"><di:waypoint x="3040" y="575" /><di:waypoint x="3040" y="997" /><di:waypoint x="2720" y="997" /><di:waypoint x="2720" y="975" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_e_submit_s_start_di" bpmnElement="Msg_e_submit_s_start"><di:waypoint x="320" y="195" /><di:waypoint x="320" y="427" /><bpmndi:BPMNLabel><dc:Bounds x="320" y="242" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_s_confirmed_e_status_di" bpmnElement="Msg_s_confirmed_e_status"><di:waypoint x="1600" y="300" /><di:waypoint x="1600" y="173" /><bpmndi:BPMNLabel><dc:Bounds x="1500" y="238" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_s_rejected_end_e_status_di" bpmnElement="Msg_s_rejected_end_e_status"><di:waypoint x="1760" y="532" /><di:waypoint x="1760" y="255" /><di:waypoint x="1600" y="255" /><di:waypoint x="1600" y="173" /><bpmndi:BPMNLabel><dc:Bounds x="1760" y="238" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_e_cancel_s_cancel_msg_di" bpmnElement="Msg_e_cancel_s_cancel_msg"><di:waypoint x="2240" y="95" /><di:waypoint x="2240" y="255" /><di:waypoint x="2080" y="255" /><di:waypoint x="2080" y="322" /><bpmndi:BPMNLabel><dc:Bounds x="2080" y="242" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_e_go_w_came_di" bpmnElement="Msg_e_go_w_came"><di:waypoint x="2400" y="195" /><di:waypoint x="2400" y="255" /><di:waypoint x="2560" y="255" /><di:waypoint x="2560" y="917" /><bpmndi:BPMNLabel><dc:Bounds x="2560" y="242" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_w_hand_e_got_di" bpmnElement="Msg_w_hand_e_got"><di:waypoint x="3360" y="895" /><di:waypoint x="3360" y="173" /><bpmndi:BPMNLabel><dc:Bounds x="3360" y="242" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,36 @@
+@startuml
+!pragma layout elk
+title АС УВО – диаграмма развёртывания
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam componentStyle uml2
+
+node "Компьютер пользователя" as PC {
+  component "Браузер\nили установленное PWA" as BR
+  component "USB-сканер" as SC
+  component "Принтер\nэтикеток" as PR
+}
+
+node "Сервер заказчика\nLinux" as SRV {
+  component "nginx\nHTTPS, статические файлы" as NGX
+  component "gunicorn\nвеб-приложение АС УВО\n(Python, Django)" as APPS
+  database "PostgreSQL" as DB
+  component "systemd timer\nпланировщик, каждые 15 минут" as TMR
+}
+
+node "Хранилище резервных копий\nзаказчика" as BAK {
+  folder "Ежедневные копии базы\nи архив журнала транзакций" as ARC
+}
+
+node "Почтовый сервер\nзаказчика" as MAIL
+
+SC --> BR : USB, режим клавиатуры
+BR --> PR : печать из браузера
+BR --> NGX : HTTPS, порт 443
+NGX --> APPS : HTTP, localhost
+APPS --> DB : SQL, localhost
+TMR --> DB : SQL, localhost
+TMR --> MAIL : SMTP, STARTTLS
+APPS --> MAIL : SMTP, STARTTLS
+DB --> ARC : копия раз в сутки,\nжурнал транзакций не реже раза в 15 минут
+@enduml

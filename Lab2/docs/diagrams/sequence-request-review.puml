@@ -1,0 +1,72 @@
+@startuml
+title АС УВО – рассмотрение заявок на одну единицу двумя ответственными лицами (UC-05, UC-06, ФТ-09, ФТ-10, ФТ-12)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 280
+hide footbox
+autonumber
+
+actor "Ответственное\nлицо А" as RA
+actor "Ответственное\nлицо Б" as RB
+participant "Заявки" as REQ
+participant "Учёт\nоборудования" as EQ
+participant "Журнал" as LOG
+database "PostgreSQL" as DB
+
+note over RA, DB
+Заявки № 101 и № 102 поданы на одну единицу № 7 в статусе «в наличии».
+Пользователи работают в браузере; роль проверяет модуль «Доступ» при каждом запросе (НФТ-01).
+end note
+
+== Взять заявку из общей очереди ==
+RA -> REQ : взять заявку № 101
+REQ -> DB : UPDATE request SET reviewer_id = А\nWHERE id = 101 AND status = 'pending' AND reviewer_id IS NULL
+alt изменена 1 строка
+  REQ -> LOG : заявка взята
+  REQ --> RA : заявка № 101 в работе у А
+else изменено 0 строк – заявку уже взяли
+  REQ --> RA : «Заявку рассматривает другое ответственное лицо»
+end
+RB -> REQ : взять заявку № 102
+REQ --> RB : заявка № 102 в работе у Б (так же, шаги 2–4)
+
+== Одновременное подтверждение ==
+par ответственное лицо А
+  RA -> REQ : подтвердить № 101
+  group транзакция
+    REQ -> DB : проверить: № 101 «на рассмотрении», reviewer_id = А
+    REQ -> EQ : забронировать единицу № 7 по заявке № 101
+    EQ -> DB : UPDATE equipment_unit SET status = 'reserved'\nWHERE id = 7 AND status = 'available'
+    DB --> EQ : изменена 1 строка
+    EQ -> DB : INSERT unit_status_change (в наличии → забронировано)
+    EQ --> REQ : забронировано
+    REQ -> DB : № 101: status = 'confirmed', decided_at
+    REQ -> LOG : заявка подтверждена
+  end
+  REQ --> RA : «Подтверждено»
+else ответственное лицо Б
+  RB -> REQ : подтвердить № 102
+  group транзакция
+    REQ -> DB : проверить: № 102 «на рассмотрении», reviewer_id = Б
+    REQ -> EQ : забронировать единицу № 7 по заявке № 102
+    EQ -> DB : UPDATE equipment_unit SET status = 'reserved'\nWHERE id = 7 AND status = 'available'
+    note right of DB
+    Строку единицы держит транзакция А.
+    После её фиксации условие
+    status = 'available' уже не выполняется.
+    end note
+    DB --> EQ : изменено 0 строк
+    EQ --> REQ : единица не в статусе «в наличии»
+    REQ -> DB : № 102: status = 'rejected', причина «единица не в наличии», decided_at
+    REQ -> LOG : заявка отклонена системой
+  end
+  REQ --> RB : «Заявка отклонена: единица уже забронирована»
+end
+
+note over RA, DB
+Какая из транзакций будет первой, решает СУБД; при любом порядке подтверждена ровно одна заявка.
+Сотрудник видит новый статус своей заявки (ФТ-28).
+end note
+@enduml

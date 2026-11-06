@@ -1,0 +1,62 @@
+@startuml
+title АС УВО – вход в систему (UC-01, НФТ-02)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 260
+hide footbox
+autonumber
+
+actor "Пользователь" as U
+participant "Браузер" as B
+participant "Доступ" as ACC
+participant "Уведомления" as NTF
+participant "Журнал" as LOG
+database "PostgreSQL" as DB
+participant "Почтовый сервер\nзаказчика" as SMTP
+
+U -> B : логин и пароль
+B -> ACC : отправить форму входа
+ACC -> DB : найти пользователя по логину
+DB --> ACC : password_hash, failed_logins, locked_until
+
+alt вход заблокирован (locked_until позже текущего времени)
+  ACC --> B : «Вход заблокирован до ЧЧ:ММ»
+else логина нет или пароль неверный
+  ACC -> DB : failed_logins + 1; при 6-й попытке подряд\nlocked_until = сейчас + 5 минут
+  ACC -> LOG : неудачный вход
+  ACC --> B : «Неверный логин или пароль»
+else пароль верный
+  ACC -> DB : сохранить code_hash, expires_at = сейчас + 10 минут
+  ACC -> NTF : отправить код сразу, без очереди
+  NTF -> SMTP : письмо с кодом на e-mail пользователя
+  alt почтовый сервер принял письмо
+    SMTP --> NTF : письмо принято
+    NTF --> ACC : отправлено
+    ACC --> B : форма ввода кода
+    U -> B : код из письма
+    B -> ACC : отправить код
+    ACC -> DB : найти действующий код пользователя
+    alt код верный, не истёк и не использован
+      ACC -> DB : used_at = сейчас; failed_logins = 0
+      ACC -> LOG : вход
+      ACC --> B : сессия до конца рабочего дня, главная страница по ролям
+    else код неверный или истёк
+      ACC -> DB : failed_logins + 1; при 6-й попытке – блокировка на 5 минут
+      ACC -> LOG : неудачный вход
+      ACC --> B : «Неверный код»
+    end
+  else почтовый сервер недоступен
+    SMTP --> NTF : ошибка соединения
+    NTF --> ACC : не отправлено
+    ACC -> LOG : ошибка отправки кода (видна администратору)
+    ACC --> B : «Не удалось отправить код. Повторите вход позже»
+  end
+end
+
+note over U, SMTP
+Неудачный вход без логина в базе не считается: учётной записи, которую можно заблокировать, нет.
+Вошедшие пользователи при отказе почтового сервера продолжают работу до конца рабочего дня (Р-01).
+end note
+@enduml

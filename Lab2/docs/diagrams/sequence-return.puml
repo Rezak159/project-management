@@ -1,0 +1,46 @@
+@startuml
+title АС УВО – приём возврата с повреждением (UC-08, UC-09, ФТ-18, ФТ-19, ФТ-24)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 270
+hide footbox
+autonumber
+
+actor "Заведующий\nскладом" as WH
+participant "Браузер" as B
+participant "Выдача\nи возврат" as ISS
+participant "Учёт\nоборудования" as EQ
+participant "Журнал" as LOG
+database "PostgreSQL" as DB
+
+WH -> B : в разделе «Возврат» отсканировать штрихкод или ввести серийный номер
+B -> ISS : найти выдачу единицы
+ISS -> DB : выдача единицы, у которой returned_at пуст
+
+alt открытой выдачи нет
+  ISS --> B : «Единица не числится выданной. Возврат не выполнен»
+else выдача найдена
+  ISS --> B : сотрудник, дата выдачи, срок возврата, дни просрочки
+  WH -> WH : осмотреть единицу
+  WH -> B : отметка «повреждена», описание повреждения
+  B -> ISS : принять возврат
+  alt отметка «повреждена», описание пустое
+    ISS --> B : «Опишите повреждение». Данные не сохранены
+  else отметка заполнена
+    group транзакция
+      ISS -> DB : UPDATE issue: returned_at, received_by_id,\nreturn_state = 'damaged', damage_description,\noverdue_days = дни после срока (0, если в срок)
+      ISS -> EQ : сменить статус единицы: выдано → починка
+      EQ -> DB : UPDATE equipment_unit, INSERT unit_status_change
+      ISS -> LOG : возврат с повреждением
+    end
+    ISS --> B : «Возврат принят. Единица в статусе «починка»»
+  end
+end
+
+note over WH, DB
+При отметке «без повреждений» описание не требуется, единица переходит в «в наличии» (ФТ-19).
+Отметка заведующего окончательная и после сохранения не меняется (ФТ-18).
+end note
+@enduml

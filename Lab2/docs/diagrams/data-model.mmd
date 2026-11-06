@@ -1,0 +1,145 @@
+---
+title: АС УВО – модель данных
+config:
+  layout: elk
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: NETWORK_SIMPLEX
+---
+erDiagram
+    DEPARTMENT ||--o{ APP_USER : "включает"
+    APP_USER ||--o{ APP_USER : "руководит"
+    APP_USER ||--o{ USER_ROLE : "имеет"
+    APP_USER ||--o{ LOGIN_CODE : "получает"
+    EQUIPMENT_TYPE ||--o{ EQUIPMENT_UNIT : "классифицирует"
+    APP_USER ||--o{ REQUEST : "подаёт"
+    APP_USER |o--o{ REQUEST : "рассматривает"
+    EQUIPMENT_UNIT ||--o{ REQUEST : "запрашивается"
+    REQUEST ||--o| ISSUE : "исполняется"
+    APP_USER ||--o{ ISSUE : "выдаёт, принимает"
+    ISSUE ||--o{ EXTENSION_REQUEST : "продлевается"
+    APP_USER |o--o{ EXTENSION_REQUEST : "решает"
+    EQUIPMENT_UNIT ||--o{ UNIT_STATUS_CHANGE : "меняет статус"
+    APP_USER |o--o{ UNIT_STATUS_CHANGE : "выполняет"
+    ISSUE |o--o{ UNIT_STATUS_CHANGE : "вызывает"
+    ISSUE |o--o{ NOTIFICATION : "напоминает"
+    APP_USER ||--o{ NOTIFICATION : "получает"
+    APP_USER |o--o{ AUDIT_LOG : "выполняет"
+
+    APP_USER["Пользователь"] {
+        bigint id PK
+        varchar personnel_number UK "табельный номер"
+        varchar full_name "ФИО"
+        bigint department_id FK
+        varchar position "должность"
+        varchar email UK
+        bigint manager_id FK "руководитель, может быть пустым"
+        int item_limit "лимит единиц на руках"
+        varchar login UK
+        varchar password_hash
+        int failed_logins "неудачных попыток подряд"
+        timestamp locked_until "блокировка входа"
+        boolean is_active
+    }
+    DEPARTMENT["Подразделение"] {
+        bigint id PK
+        varchar name UK
+    }
+    USER_ROLE["Роль пользователя"] {
+        bigint user_id PK, FK
+        varchar role PK "responsible, warehouse, manager, admin, user_admin"
+    }
+    LOGIN_CODE["Код входа"] {
+        bigint id PK
+        bigint user_id FK
+        varchar code_hash
+        timestamp expires_at
+        timestamp used_at
+    }
+    EQUIPMENT_TYPE["Тип оборудования"] {
+        bigint id PK
+        varchar name UK
+        boolean is_measuring "измерительный прибор"
+    }
+    EQUIPMENT_UNIT["Единица оборудования"] {
+        bigint id PK
+        varchar serial_number UK "в штрихкоде Code 128"
+        bigint type_id FK
+        varchar model
+        text description
+        varchar condition "состояние"
+        varchar status "available, reserved, issued, repair, written_off, lost"
+        date next_check_date "следующая поверка"
+        timestamp registered_at
+    }
+    REQUEST["Заявка"] {
+        bigint id PK
+        bigint employee_id FK
+        bigint unit_id FK
+        date start_date "дата начала использования"
+        date return_due_date "может быть пустой"
+        varchar status "pending, confirmed, rejected, cancelled, expired, fulfilled"
+        bigint reviewer_id FK "взявший ответственный"
+        timestamp created_at
+        timestamp decided_at
+    }
+    ISSUE["Выдача"] {
+        bigint id PK
+        bigint request_id FK, UK
+        bigint issued_by_id FK "заведующий складом"
+        timestamp issued_at
+        date return_due_date "текущий срок, пустой – бессрочно"
+        timestamp returned_at
+        bigint received_by_id FK
+        varchar return_state "intact, damaged"
+        text damage_description
+        int overdue_days "длительность просрочки"
+    }
+    EXTENSION_REQUEST["Запрос продления"] {
+        bigint id PK
+        bigint issue_id FK
+        date new_due_date
+        varchar status "pending, approved, rejected"
+        bigint decided_by_id FK "руководитель"
+        timestamp created_at
+        timestamp decided_at
+    }
+    UNIT_STATUS_CHANGE["Смена статуса единицы"] {
+        bigint id PK
+        bigint unit_id FK
+        varchar from_status
+        varchar to_status
+        bigint changed_by_id FK "пусто – система"
+        bigint issue_id FK "если смена при выдаче или возврате"
+        timestamp changed_at
+        text comment
+    }
+    NOTIFICATION["Письмо"] {
+        bigint id PK
+        bigint issue_id FK
+        bigint recipient_id FK
+        varchar kind "due_soon, overdue, manager_overdue"
+        date for_date "день, за который письмо"
+        varchar status "pending, sent, failed"
+        int attempts
+        timestamp sent_at
+    }
+    AUDIT_LOG["Запись журнала"] {
+        bigint id PK
+        bigint user_id FK
+        timestamp created_at
+        varchar action
+        varchar object_type
+        bigint object_id
+        text details
+    }
+    SETTING["Настройка"] {
+        varchar key PK "reminder_days, smtp_host, audit_retention_days"
+        text value
+    }
+    WORK_SCHEDULE["График рабочих часов"] {
+        smallint weekday PK
+        time start_time
+        time end_time
+        boolean is_working_day
+    }

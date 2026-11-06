@@ -1,0 +1,55 @@
+@startuml
+!pragma layout elk
+title АС УВО – диаграмма компонентов
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+node "Компьютер пользователя" {
+  component "USB-сканер\n(режим клавиатуры)" as SC
+  component "Браузер\nстраницы, PWA" as BR
+  component "Принтер" as PR
+}
+
+package "Веб-приложение АС УВО" as WEB {
+  component "Доступ" as ACC
+  package "Прикладные модули" as APP {
+    component "Учёт\nоборудования" as EQ
+    component "Заявки" as REQ
+    component "Выдача\nи возврат" as ISS
+    component "Контроль\nсроков" as DL
+    component "История\nи отчёты" as REP
+  }
+  package "Общие модули" as COM {
+    component "Справочники\nи настройки" as SET
+    component "Уведомления" as NTF
+    component "Журнал" as LOG
+    component "Excel" as XLS
+    note "Используются всеми модулями:\nзапись в журнал, чтение справочников,\nзагрузка и выгрузка .xlsx" as NCOM
+  }
+}
+
+component "Планировщик\nзапуск каждые 15 минут" as SCH
+database "PostgreSQL" as DB
+component "Почтовый сервер\nзаказчика" as SMTP <<внешняя система>>
+
+SC --> BR : серийный номер + Enter
+BR --> PR : печать этикетки
+BR --> ACC : HTTPS
+ACC --> APP : запрос после проверки\nсессии и роли
+REQ --> EQ : бронь
+ISS --> REQ : исполнение заявки
+ISS --> EQ : статус единицы
+DL --> ISS : срок возврата
+DL --> NTF
+REP ..> ISS : чтение
+ACC --> NTF : код входа
+SCH --> REQ
+SCH --> DL
+SCH --> NTF
+SCH --> LOG
+NTF --> SMTP : SMTP
+WEB --> DB : SQL
+SCH --> DB : SQL
+@enduml

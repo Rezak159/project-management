@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Defs_deadline" targetNamespace="http://bpmn.io/schema/bpmn" exporter="lab2 tools/bpmn.py" exporterVersion="1.0">
+  <bpmn:collaboration id="Collab_deadline">
+    <bpmn:participant id="P_mail" name="Почтовый сервер заказчика" />
+    <bpmn:participant id="P_org" name="Контроль сроков" processRef="Process_P_org" />
+    <bpmn:participant id="P_emp" name="Сотрудник" processRef="Process_P_emp" />
+    <bpmn:messageFlow id="Msg_t_remind_P_mail" name="Письмо сотруднику" sourceRef="t_remind" targetRef="P_mail" />
+    <bpmn:messageFlow id="Msg_t_manager_P_mail" name="Письмо руководителю" sourceRef="t_manager" targetRef="P_mail" />
+    <bpmn:messageFlow id="Msg_t_daily_P_mail" name="Письмо сотруднику" sourceRef="t_daily" targetRef="P_mail" />
+    <bpmn:messageFlow id="Msg_e_ask_x_start" name="Запрос продления" sourceRef="e_ask" targetRef="x_start" />
+    <bpmn:messageFlow id="Msg_x_rejected_e_answer" name="Отказ" sourceRef="x_rejected" targetRef="e_answer" />
+    <bpmn:messageFlow id="Msg_x_changed_e_answer" name="Новый срок" sourceRef="x_changed" targetRef="e_answer" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_P_org" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_P_org">
+      <bpmn:lane id="L_sys" name="АС УВО">
+        <bpmn:flowNodeRef>t_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_find</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_case</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_remind</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_remind_end</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_manager</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_merge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_daily</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_daily_end</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>x_start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>x_pass</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>x_change</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>x_changed</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="L_mgr" name="Руководитель">
+        <bpmn:flowNodeRef>x_review</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>x_decision</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>x_rejected</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="t_start" name="Ежедневно в начале рабочих часов">
+      <bpmn:outgoing>Flow_t_start_t_find</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="t_start_def" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="t_find" name="Найти выдачи, по которым нужны письма">
+      <bpmn:incoming>Flow_t_start_t_find</bpmn:incoming>
+      <bpmn:outgoing>Flow_t_find_t_case</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="t_case" name="Срок возврата?">
+      <bpmn:incoming>Flow_t_find_t_case</bpmn:incoming>
+      <bpmn:outgoing>Flow_t_case_t_remind</bpmn:outgoing>
+      <bpmn:outgoing>Flow_t_case_t_manager</bpmn:outgoing>
+      <bpmn:outgoing>Flow_t_case_t_merge</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sendTask id="t_remind" name="Напомнить сотруднику о сроке">
+      <bpmn:incoming>Flow_t_case_t_remind</bpmn:incoming>
+      <bpmn:outgoing>Flow_t_remind_t_remind_end</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="t_remind_end" name="Напоминание отправлено">
+      <bpmn:incoming>Flow_t_remind_t_remind_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sendTask id="t_manager" name="Письмо руководителю о просрочке">
+      <bpmn:incoming>Flow_t_case_t_manager</bpmn:incoming>
+      <bpmn:outgoing>Flow_t_manager_t_merge</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:exclusiveGateway id="t_merge" name="">
+      <bpmn:incoming>Flow_t_manager_t_merge</bpmn:incoming>
+      <bpmn:incoming>Flow_t_case_t_merge</bpmn:incoming>
+      <bpmn:outgoing>Flow_t_merge_t_daily</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sendTask id="t_daily" name="Напомнить сотруднику о просрочке">
+      <bpmn:incoming>Flow_t_merge_t_daily</bpmn:incoming>
+      <bpmn:outgoing>Flow_t_daily_t_daily_end</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="t_daily_end" name="Письма отправлены">
+      <bpmn:incoming>Flow_t_daily_t_daily_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:startEvent id="x_start" name="Запрос продления получен">
+      <bpmn:outgoing>Flow_x_start_x_pass</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="x_start_def" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="x_pass" name="Показать запрос руководителю сотрудника">
+      <bpmn:incoming>Flow_x_start_x_pass</bpmn:incoming>
+      <bpmn:outgoing>Flow_x_pass_x_review</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="x_review" name="Рассмотреть запрос продления">
+      <bpmn:incoming>Flow_x_pass_x_review</bpmn:incoming>
+      <bpmn:outgoing>Flow_x_review_x_decision</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="x_decision" name="Решение?">
+      <bpmn:incoming>Flow_x_review_x_decision</bpmn:incoming>
+      <bpmn:outgoing>Flow_x_decision_x_change</bpmn:outgoing>
+      <bpmn:outgoing>Flow_x_decision_x_rejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="x_rejected" name="Запрос отклонён">
+      <bpmn:incoming>Flow_x_decision_x_rejected</bpmn:incoming>
+      <bpmn:messageEventDefinition id="x_rejected_def" />
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="x_change" name="Изменить срок возврата">
+      <bpmn:incoming>Flow_x_decision_x_change</bpmn:incoming>
+      <bpmn:outgoing>Flow_x_change_x_changed</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="x_changed" name="Срок продлён">
+      <bpmn:incoming>Flow_x_change_x_changed</bpmn:incoming>
+      <bpmn:messageEventDefinition id="x_changed_def" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_t_start_t_find" sourceRef="t_start" targetRef="t_find" />
+    <bpmn:sequenceFlow id="Flow_t_find_t_case" sourceRef="t_find" targetRef="t_case" />
+    <bpmn:sequenceFlow id="Flow_t_case_t_remind" name="скоро срок" sourceRef="t_case" targetRef="t_remind" />
+    <bpmn:sequenceFlow id="Flow_t_remind_t_remind_end" sourceRef="t_remind" targetRef="t_remind_end" />
+    <bpmn:sequenceFlow id="Flow_t_case_t_manager" name="новая просрочка" sourceRef="t_case" targetRef="t_manager" />
+    <bpmn:sequenceFlow id="Flow_t_manager_t_merge" sourceRef="t_manager" targetRef="t_merge" />
+    <bpmn:sequenceFlow id="Flow_t_case_t_merge" name="просрочка продолжается" sourceRef="t_case" targetRef="t_merge" />
+    <bpmn:sequenceFlow id="Flow_t_merge_t_daily" sourceRef="t_merge" targetRef="t_daily" />
+    <bpmn:sequenceFlow id="Flow_t_daily_t_daily_end" sourceRef="t_daily" targetRef="t_daily_end" />
+    <bpmn:sequenceFlow id="Flow_x_start_x_pass" sourceRef="x_start" targetRef="x_pass" />
+    <bpmn:sequenceFlow id="Flow_x_pass_x_review" sourceRef="x_pass" targetRef="x_review" />
+    <bpmn:sequenceFlow id="Flow_x_review_x_decision" sourceRef="x_review" targetRef="x_decision" />
+    <bpmn:sequenceFlow id="Flow_x_decision_x_change" name="согласовать" sourceRef="x_decision" targetRef="x_change" />
+    <bpmn:sequenceFlow id="Flow_x_decision_x_rejected" name="отклонить" sourceRef="x_decision" targetRef="x_rejected" />
+    <bpmn:sequenceFlow id="Flow_x_change_x_changed" sourceRef="x_change" targetRef="x_changed" />
+  </bpmn:process>
+  <bpmn:process id="Process_P_emp" isExecutable="false">
+    <bpmn:startEvent id="e_start" name="Срока возврата не хватает">
+      <bpmn:outgoing>Flow_e_start_e_ask</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sendTask id="e_ask" name="Запросить продление с новой датой">
+      <bpmn:incoming>Flow_e_start_e_ask</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_ask_e_answer</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:intermediateCatchEvent id="e_answer" name="Решение получено">
+      <bpmn:incoming>Flow_e_ask_e_answer</bpmn:incoming>
+      <bpmn:outgoing>Flow_e_answer_e_end</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="e_answer_def" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="e_end" name="Срок возврата известен">
+      <bpmn:incoming>Flow_e_answer_e_end</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_e_start_e_ask" sourceRef="e_start" targetRef="e_ask" />
+    <bpmn:sequenceFlow id="Flow_e_ask_e_answer" sourceRef="e_ask" targetRef="e_answer" />
+    <bpmn:sequenceFlow id="Flow_e_answer_e_end" sourceRef="e_answer" targetRef="e_end" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_deadline">
+    <bpmndi:BPMNPlane id="Plane_deadline" bpmnElement="Collab_deadline">
+      <bpmndi:BPMNShape id="P_mail_di" bpmnElement="P_mail" isHorizontal="true"><dc:Bounds x="0" y="0" width="1520" height="60" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P_org_di" bpmnElement="P_org" isHorizontal="true"><dc:Bounds x="0" y="110" width="1520" height="570" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L_sys_di" bpmnElement="L_sys" isHorizontal="true"><dc:Bounds x="30" y="110" width="1490" height="420" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L_mgr_di" bpmnElement="L_mgr" isHorizontal="true"><dc:Bounds x="30" y="530" width="1490" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_start_di" bpmnElement="t_start"><dc:Bounds x="142" y="152" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_find_di" bpmnElement="t_find"><dc:Bounds x="260" y="130" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_case_di" bpmnElement="t_case" isMarkerVisible="true"><dc:Bounds x="455" y="145" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_remind_di" bpmnElement="t_remind"><dc:Bounds x="580" y="130" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_remind_end_di" bpmnElement="t_remind_end"><dc:Bounds x="782" y="152" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_manager_di" bpmnElement="t_manager"><dc:Bounds x="900" y="230" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_merge_di" bpmnElement="t_merge" isMarkerVisible="true"><dc:Bounds x="1095" y="245" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_daily_di" bpmnElement="t_daily"><dc:Bounds x="1220" y="230" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_daily_end_di" bpmnElement="t_daily_end"><dc:Bounds x="1422" y="252" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="x_start_di" bpmnElement="x_start"><dc:Bounds x="302" y="452" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="270" y="408" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="x_pass_di" bpmnElement="x_pass"><dc:Bounds x="420" y="430" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="x_review_di" bpmnElement="x_review"><dc:Bounds x="580" y="565" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="x_decision_di" bpmnElement="x_decision" isMarkerVisible="true"><dc:Bounds x="775" y="580" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="x_rejected_di" bpmnElement="x_rejected"><dc:Bounds x="942" y="587" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="910" y="543" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="x_change_di" bpmnElement="x_change"><dc:Bounds x="900" y="430" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="x_changed_di" bpmnElement="x_changed"><dc:Bounds x="1102" y="452" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1070" y="408" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="P_emp_di" bpmnElement="P_emp" isHorizontal="true"><dc:Bounds x="0" y="730" width="1520" height="150" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_start_di" bpmnElement="e_start"><dc:Bounds x="142" y="787" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_ask_di" bpmnElement="e_ask"><dc:Bounds x="260" y="765" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_answer_di" bpmnElement="e_answer"><dc:Bounds x="1102" y="787" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1070" y="743" width="100" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e_end_di" bpmnElement="e_end"><dc:Bounds x="1262" y="787" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_t_start_t_find_di" bpmnElement="Flow_t_start_t_find"><di:waypoint x="178" y="170" /><di:waypoint x="260" y="170" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_find_t_case_di" bpmnElement="Flow_t_find_t_case"><di:waypoint x="380" y="170" /><di:waypoint x="455" y="170" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_case_t_remind_di" bpmnElement="Flow_t_case_t_remind"><di:waypoint x="505" y="170" /><di:waypoint x="580" y="170" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_remind_t_remind_end_di" bpmnElement="Flow_t_remind_t_remind_end"><di:waypoint x="700" y="170" /><di:waypoint x="782" y="170" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_case_t_manager_di" bpmnElement="Flow_t_case_t_manager"><di:waypoint x="480" y="195" /><di:waypoint x="480" y="270" /><di:waypoint x="900" y="270" /><bpmndi:BPMNLabel><dc:Bounds x="488" y="238" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_manager_t_merge_di" bpmnElement="Flow_t_manager_t_merge"><di:waypoint x="1020" y="270" /><di:waypoint x="1095" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_case_t_merge_di" bpmnElement="Flow_t_case_t_merge"><di:waypoint x="480" y="195" /><di:waypoint x="480" y="370" /><di:waypoint x="1120" y="370" /><di:waypoint x="1120" y="295" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_merge_t_daily_di" bpmnElement="Flow_t_merge_t_daily"><di:waypoint x="1145" y="270" /><di:waypoint x="1220" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_daily_t_daily_end_di" bpmnElement="Flow_t_daily_t_daily_end"><di:waypoint x="1340" y="270" /><di:waypoint x="1422" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_x_start_x_pass_di" bpmnElement="Flow_x_start_x_pass"><di:waypoint x="338" y="470" /><di:waypoint x="420" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_x_pass_x_review_di" bpmnElement="Flow_x_pass_x_review"><di:waypoint x="540" y="470" /><di:waypoint x="560" y="470" /><di:waypoint x="560" y="605" /><di:waypoint x="580" y="605" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_x_review_x_decision_di" bpmnElement="Flow_x_review_x_decision"><di:waypoint x="700" y="605" /><di:waypoint x="775" y="605" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_x_decision_x_change_di" bpmnElement="Flow_x_decision_x_change"><di:waypoint x="800" y="580" /><di:waypoint x="800" y="470" /><di:waypoint x="900" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_x_decision_x_rejected_di" bpmnElement="Flow_x_decision_x_rejected"><di:waypoint x="825" y="605" /><di:waypoint x="942" y="605" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_x_change_x_changed_di" bpmnElement="Flow_x_change_x_changed"><di:waypoint x="1020" y="470" /><di:waypoint x="1102" y="470" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_start_e_ask_di" bpmnElement="Flow_e_start_e_ask"><di:waypoint x="178" y="805" /><di:waypoint x="260" y="805" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_ask_e_answer_di" bpmnElement="Flow_e_ask_e_answer"><di:waypoint x="380" y="805" /><di:waypoint x="1102" y="805" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_answer_e_end_di" bpmnElement="Flow_e_answer_e_end"><di:waypoint x="1138" y="805" /><di:waypoint x="1262" y="805" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_t_remind_P_mail_di" bpmnElement="Msg_t_remind_P_mail"><di:waypoint x="640" y="130" /><di:waypoint x="640" y="60" /><bpmndi:BPMNLabel><dc:Bounds x="650" y="72" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_t_manager_P_mail_di" bpmnElement="Msg_t_manager_P_mail"><di:waypoint x="960" y="230" /><di:waypoint x="960" y="60" /><bpmndi:BPMNLabel><dc:Bounds x="970" y="72" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_t_daily_P_mail_di" bpmnElement="Msg_t_daily_P_mail"><di:waypoint x="1280" y="230" /><di:waypoint x="1280" y="60" /><bpmndi:BPMNLabel><dc:Bounds x="1290" y="72" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_e_ask_x_start_di" bpmnElement="Msg_e_ask_x_start"><di:waypoint x="320" y="765" /><di:waypoint x="320" y="488" /><bpmndi:BPMNLabel><dc:Bounds x="330" y="692" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_x_rejected_e_answer_di" bpmnElement="Msg_x_rejected_e_answer"><di:waypoint x="960" y="623" /><di:waypoint x="960" y="705" /><di:waypoint x="1120" y="705" /><di:waypoint x="1120" y="787" /><bpmndi:BPMNLabel><dc:Bounds x="970" y="692" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Msg_x_changed_e_answer_di" bpmnElement="Msg_x_changed_e_answer"><di:waypoint x="1120" y="488" /><di:waypoint x="1120" y="787" /><bpmndi:BPMNLabel><dc:Bounds x="1130" y="692" width="90" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

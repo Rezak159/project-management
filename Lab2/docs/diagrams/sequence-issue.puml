@@ -1,0 +1,56 @@
+@startuml
+title АС УВО – выдача оборудования по заявке (UC-07, UC-09, ФТ-13…ФТ-17, ФТ-31)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 320
+hide footbox
+autonumber
+
+actor "Заведующий\nскладом" as WH
+participant "USB-сканер" as SC
+participant "Браузер" as B
+participant "Выдача\nи возврат" as ISS
+participant "Учёт\nоборудования" as EQ
+participant "Журнал" as LOG
+database "PostgreSQL" as DB
+
+WH -> B : найти подтверждённую заявку сотрудника
+B -> ISS : открыть заявку № 101
+ISS -> DB : заявка, сотрудник, единица из заявки
+ISS --> B : форма выдачи, курсор в поле «Серийный номер»
+
+alt сканер исправен
+  WH -> SC : сканировать штрихкод на единице
+  SC -> B : символы серийного номера и Enter, как с клавиатуры
+else сканер неисправен
+  WH -> B : ввести серийный номер вручную и нажать Enter
+end
+B -> ISS : выдать по заявке № 101 единицу с серийным номером
+ISS -> DB : найти единицу по серийному номеру
+
+alt единица не найдена
+  ISS --> B : «Единица с таким серийным номером не найдена»
+else найдена другая единица, не из заявки
+  ISS --> B : «Единица не совпадает с заявкой. Выдача не выполнена»
+  note right of B : заведующий сканирует нужную единицу, шаг 5
+else единица из заявки
+  group транзакция
+    ISS -> DB : SELECT … FROM app_user WHERE id = сотрудник FOR UPDATE
+    ISS -> DB : число невозвращённых выдач сотрудника
+    alt на руках столько же, сколько лимит
+      ISS -> DB : ROLLBACK
+      ISS --> B : «У сотрудника на руках N единиц из N. Выдача не выполнена»
+    else лимит не достигнут
+      ISS -> DB : INSERT issue: issued_at, issued_by_id, return_due_date из заявки
+      ISS -> EQ : сменить статус единицы: забронировано → выдано
+      EQ -> DB : UPDATE equipment_unit, INSERT unit_status_change
+      ISS -> DB : заявка № 101: status = 'fulfilled'
+      ISS -> LOG : выдача
+      ISS -> DB : COMMIT
+      ISS --> B : «Выдано»\nи пометка «наступила дата поверки», если next_check_date не позже сегодня
+    end
+  end
+end
+@enduml

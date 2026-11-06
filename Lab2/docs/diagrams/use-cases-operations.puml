@@ -1,0 +1,66 @@
+@startuml
+title АС УВО – варианты использования: заявки, выдача, возврат, сроки
+left to right direction
+skinparam linetype polyline
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam actorStyle awesome
+skinparam nodesep 30
+skinparam ranksep 70
+
+actor "Сотрудник" as EMP
+actor "Ответственное\nлицо" as RESP
+actor "Заведующий\nскладом" as WH
+actor "Руководитель" as MGR
+actor "Время" as TIME
+
+rectangle "АС УВО" {
+  usecase "UC-01 Войти в систему" as UC01
+  package "Заявки" {
+    usecase "UC-02 Подать заявку" as UC02
+    usecase "UC-03 Отменить заявку" as UC03
+    usecase "UC-04 Просмотреть свои заявки" as UC04
+    usecase "UC-05 Взять заявку из очереди" as UC05
+    usecase "UC-06 Рассмотреть заявку" as UC06
+  }
+  package "Выдача и возврат" {
+    usecase "UC-07 Выдать оборудование" as UC07
+    usecase "UC-08 Принять возврат" as UC08
+    usecase "UC-09 Определить единицу\nпо штрихкоду или серийному номеру" as UC09
+    usecase "UC-10 Изменить статус единицы" as UC10
+  }
+  package "Контроль сроков" {
+    usecase "UC-18 Запросить продление" as UC18
+    usecase "UC-19 Согласовать продление" as UC19
+    usecase "UC-20 Просмотреть просроченные\nвыдачи сотрудников" as UC20
+    usecase "UC-21 Обработать сроки" as UC21
+  }
+}
+
+actor "Почтовый сервер\nзаказчика" as MAIL
+
+RESP -up-|> EMP
+WH -up-|> EMP
+MGR -up-|> EMP
+
+EMP --> UC01
+EMP --> UC02
+EMP --> UC03
+EMP --> UC04
+EMP --> UC18
+RESP --> UC05
+RESP --> UC06
+WH --> UC07
+WH --> UC08
+WH --> UC10
+MGR --> UC19
+MGR --> UC20
+
+UC07 ..> UC09 : <<include>>
+UC08 ..> UC09 : <<include>>
+
+TIME --> UC21
+UC01 --> MAIL
+UC21 --> MAIL
+@enduml
